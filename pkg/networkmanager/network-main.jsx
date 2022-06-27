@@ -26,7 +26,7 @@ import {
     Card, CardActions, CardBody, CardTitle, CardHeader,
     Flex, Gallery,
     Page, PageSection, PageSectionVariants,
-    Text, TextVariants,
+    Text, TextVariants, Dropdown, DropdownToggle,
 } from "@patternfly/react-core";
 
 import { FirewallSwitch } from "./firewall-switch.jsx";
@@ -55,11 +55,11 @@ export const NetworkPage = ({ privileged, operationInProgress, usage_monitor, pl
     interfaces.forEach(iface => {
         function hasGroup(iface) {
             return ((iface.Device &&
-                     iface.Device.ActiveConnection &&
-                     iface.Device.ActiveConnection.Group &&
-                     iface.Device.ActiveConnection.Group.Members.length > 0) ||
-                    (iface.MainConnection &&
-                     iface.MainConnection.Groups.length > 0));
+                    iface.Device.ActiveConnection &&
+                    iface.Device.ActiveConnection.Group &&
+                    iface.Device.ActiveConnection.Group.Members.length > 0) ||
+                (iface.MainConnection &&
+                    iface.MainConnection.Groups.length > 0));
         }
 
         // Skip loopback
@@ -79,7 +79,12 @@ export const NetworkPage = ({ privileged, operationInProgress, usage_monitor, pl
         const activeConnection = render_active_connection(dev, false, true);
         const row = {
             columns: [
-                { title: (!dev || is_managed(dev)) ? <Button variant="link" isInline onClick={() => cockpit.location.go([iface.Name])}>{iface.Name}</Button> : iface.Name },
+                {
+                    title: (!dev || is_managed(dev))
+                        ? <Button variant="link" isInline
+                                                            onClick={() => cockpit.location.go([iface.Name])}>{iface.Name}</Button>
+                        : iface.Name
+                },
                 { title: activeConnection },
             ],
             props: {
@@ -137,7 +142,10 @@ export const NetworkPage = ({ privileged, operationInProgress, usage_monitor, pl
     };
     const url = "/system/logs/#/?prio=debug&_SYSTEMD_UNIT=NetworkManager.service,firewalld.service";
     /* End of properties for the LogsPanel component */
-
+    const [isOpen, setIsOpen] = React.useState(false);
+    const onToggle = isOpen => {
+        setIsOpen(isOpen);
+    };
     return (
         <Page data-test-wait={operationInProgress} id="networking">
             <PageSection id="networking-graphs" className="networking-graphs" variant={PageSectionVariants.light}>
@@ -172,6 +180,19 @@ export const NetworkPage = ({ privileged, operationInProgress, usage_monitor, pl
                         <CardHeader>
                             <CardTitle><Text component={TextVariants.h2}>{_("Interfaces")}</Text></CardTitle>
                             {privileged && <CardActions>
+                                <Dropdown id="networking-vpn-dropdown"
+                                    toggle={<DropdownToggle id="toggle-secondary" toggleVariant="secondary"
+                                                            onToggle={onToggle}>
+                                        {_("Add VPN")}</DropdownToggle>} isOpen={isOpen}
+                                    dropdownItems={[
+                                        // eslint-disable-next-line react/jsx-key
+                                        <NetworkAction buttonText={_("Add WireGuard")} type='wg' dropdown />,
+                                        // eslint-disable-next-line react/jsx-key
+                                        <NetworkAction buttonText={_("Add PPPoE")} type='pppoe' dropdown />,
+                                        // eslint-disable-next-line react/jsx-key
+                                        <NetworkAction buttonText={_("Add OpenVPN")} type='bond' dropdown />]
+                                    }
+                                />
                                 <NetworkAction buttonText={_("Add bond")} type='bond' />
                                 <NetworkAction buttonText={_("Add team")} type='team' />
                                 <NetworkAction buttonText={_("Add bridge")} type='bridge' />
@@ -189,20 +210,21 @@ export const NetworkPage = ({ privileged, operationInProgress, usage_monitor, pl
                                       rows={managed} />
                     </Card>
                     {unmanaged.length > 0 &&
-                    <Card id="networking-unmanaged-interfaces">
-                        <CardHeader>
-                            <CardTitle><Text component={TextVariants.h2}>{_("Unmanaged interfaces")}</Text></CardTitle>
-                        </CardHeader>
-                        <ListingTable aria-label={_("Unmanaged interfaces")}
-                                      variant='compact'
-                                      columns={[
-                                          { title: _("Name"), header: true, props: { width: 25 } },
-                                          { title: _("IP address"), props: { width: 25 } },
-                                          { title: _("Sending"), props: { width: 25 } },
-                                          { title: _("Receiving"), props: { width: 25 } },
-                                      ]}
-                                      rows={unmanaged} />
-                    </Card>}
+                        <Card id="networking-unmanaged-interfaces">
+                            <CardHeader>
+                                <CardTitle><Text
+                                    component={TextVariants.h2}>{_("Unmanaged interfaces")}</Text></CardTitle>
+                            </CardHeader>
+                            <ListingTable aria-label={_("Unmanaged interfaces")}
+                                          variant='compact'
+                                          columns={[
+                                              { title: _("Name"), header: true, props: { width: 25 } },
+                                              { title: _("IP address"), props: { width: 25 } },
+                                              { title: _("Sending"), props: { width: 25 } },
+                                              { title: _("Receiving"), props: { width: 25 } },
+                                          ]}
+                                          rows={unmanaged} />
+                        </Card>}
                     <LogsPanel title={_("Network logs")} match={match}
                                max={10} search_options={search_options}
                                goto_url={url}

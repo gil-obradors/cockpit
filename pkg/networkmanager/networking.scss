@@ -135,7 +135,7 @@ th {
     width: 12rem;
 }
 
-#network-ip-settings-body {
+#network-ip-settings-body,#network-vpn-settings-body {
     .pf-c-form__label {
         // Don't allow labels to wrap
         white-space: nowrap;
@@ -291,3 +291,9 @@ th {
 }
 
 /* End Firewall specific CSS */
+
+#network-pppoe-settings-dialog {
+    .pf-c-form__label-text {
+        color: rgb(21, 21, 21);
+    }
+}

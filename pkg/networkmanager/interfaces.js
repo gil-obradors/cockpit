@@ -695,6 +695,32 @@ export function NetworkManagerModel() {
         } else
             delete result["802-3-ethernet"];
 
+        if (settings.wireguard) {
+            set("wireguard", "private-key", "s", settings.wireguard.private_key);
+            set("wireguard", "peers", "aa{sv}", settings.wireguard.peers.map(function (peer) {
+                const p = { "public-key": {}, "allowed-ips": {}, endpoint: {} };
+                p["public-key"].t = "s";
+                p["public-key"].v = peer.public_key;
+                p["allowed-ips"].t = "as";
+                p["allowed-ips"].v = [peer.allowed_ips,];
+                p.endpoint.t = "s";
+                p.endpoint.v = peer.endpoint;
+                return p;
+            }
+            ));
+        }
+
+        if (settings.ppp) {
+            set("ppp", "lcp-echo-failure", "u", settings.ppp.lcp_echo_failure);
+            set("ppp", "lcp-echo-interval", "u", settings.ppp.lcp_echo_interval);
+        }
+
+        if (settings.pppoe) {
+            set("pppoe", "username", "s", settings.pppoe.username);
+            set("pppoe", "password", "s", settings.pppoe.password);
+            set("pppoe", "service", "s", settings.pppoe.service);
+            set("pppoe", "parent", "s", settings.pppoe.parent);
+        }
         return result;
     }
 
@@ -1390,7 +1416,7 @@ export function settings_applier(model, device, connection) {
      *
      * https://bugzilla.gnome.org/show_bug.cgi?id=775226
      */
-
+    console.log("settings_applier", model, device, connection);
     return function (settings) {
         if (connection) {
             return connection.apply_settings(settings);

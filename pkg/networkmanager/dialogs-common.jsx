@@ -19,9 +19,8 @@
 
 import React, { useContext, useEffect, useState } from 'react';
 import cockpit from 'cockpit';
-
 import {
-    Button, Checkbox, Form, FormGroup, Modal,
+    Button, Checkbox, DropdownItem, Form, FormGroup, Modal,
     Select, SelectOption, SelectVariant,
     Stack, TextInput
 } from '@patternfly/react-core';
@@ -38,7 +37,8 @@ import { MacDialog } from './mac.jsx';
 import { ModalError } from 'cockpit-components-inline-notification.jsx';
 import { ModelContext } from './model-context.jsx';
 import { useDialogs } from "dialogs.jsx";
-
+import { getWireguardSettings, WireguardDialog } from './wireguard.jsx';
+import { getPppoeSettings, PppoeDialog } from "./pppoe.jsx";
 import {
     apply_group_member,
     syn_click,
@@ -165,7 +165,7 @@ export const NetworkModal = ({ dialogError, help, idPrefix, title, onSubmit, chi
     );
 };
 
-export const NetworkAction = ({ buttonText, iface, connectionSettings, type }) => {
+export const NetworkAction = ({ buttonText, iface, connectionSettings, type, dropdown }) => {
     const Dialogs = useDialogs();
     const [showAddTeam, setShowAddTeam] = useState(undefined);
     const model = useContext(ModelContext);
@@ -208,11 +208,14 @@ export const NetworkAction = ({ buttonText, iface, connectionSettings, type }) =
     const newIfaceName = !iface ? getName() : undefined;
 
     let settings = connectionSettings;
+
     if (!settings) {
         if (type == 'bond') settings = getBondGhostSettings({ newIfaceName });
         if (type == 'vlan') settings = getVlanGhostSettings();
         if (type == 'team') settings = getTeamGhostSettings({ newIfaceName });
         if (type == 'bridge') settings = getBridgeGhostSettings({ newIfaceName });
+        if (type == 'wg') settings = getWireguardSettings({ newIfaceName });
+        if (type == 'pppoe') settings = getPppoeSettings({ newIfaceName });
     }
 
     const properties = { connection: con, dev, settings };
@@ -239,10 +242,19 @@ export const NetworkAction = ({ buttonText, iface, connectionSettings, type }) =
             dlg = <IpSettingsDialog topic="ipv4" {...properties} />;
         else if (type == 'ipv6')
             dlg = <IpSettingsDialog topic="ipv6" {...properties} />;
+        else if (type == 'wg')
+            dlg = <WireguardDialog {...properties} />;
+        else if (type == 'pppoe')
+            dlg = <PppoeDialog {...properties} />;
         if (dlg)
             Dialogs.show(dlg);
     }
 
+    if (dropdown) {
+        return <DropdownItem id={"networking-vpn-dropdown-" + type}
+                             onClick={syn_click(model, show)} value="openvpn"
+                             key="openvpn">{buttonText}</DropdownItem>;
+    }
     return (
         <>
             <Button id={"networking-" + (!iface ? "add-" : "edit-") + type}
@@ -267,6 +279,7 @@ function reactivateConnection({ con, dev }) {
 }
 
 export const dialogSave = ({ model, dev, connection, members, membersInit, settings, setDialogError, onClose }) => {
+    console.log("dialogSave: ", model, dev, connection, members, settings);
     const apply_settings = settings_applier(model, dev, connection);
     const iface = settings.connection.interface_name;
     const type = settings.connection.type;
@@ -314,3 +327,6 @@ export const dialogSave = ({ model, dev, connection, members, membersInit, setti
             });
     }
 };
+
+export class DropdownPrimaryToggle {
+}

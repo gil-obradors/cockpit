@@ -180,6 +180,8 @@ export const NetworkInterfacePage = ({
                 desc = _("VLAN");
             } else if (dev.DeviceType == 'bridge') {
                 desc = _("Bridge");
+            } else if (dev.Driver == 'wireguard') {
+                desc = _("Wireguard");
             } else
                 desc = cockpit.format(_("Unknown \"$0\""), dev.DeviceType);
         } else if (iface) {
@@ -681,7 +683,8 @@ export const NetworkInterfacePage = ({
     const isDeletable = (iface && !dev) || (dev && (dev.DeviceType == 'bond' ||
                                                     dev.DeviceType == 'team' ||
                                                     dev.DeviceType == 'vlan' ||
-                                                    dev.DeviceType == 'bridge'));
+                                                    dev.DeviceType == 'bridge' ||
+                                                    dev.Driver == 'wireguard'));
 
     const settingsRows = renderConnectionSettingsRows(iface.MainConnection, connectionSettings)
             .map((component, idx) => <React.Fragment key={idx}>{component}</React.Fragment>);
